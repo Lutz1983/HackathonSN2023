@@ -40,14 +40,22 @@ downloadFlat <- function(
   dfcontent <- rawToChar(df$content)
 
   if (language == "de") {
-    df <- vroom(dfcontent, delim = ";")
+    df <- vroom(file = dfcontent, 
+                delim = ";", 
+                locale = locale(grouping_mark = ",", decimal_mark = ".", encoding = "UTF-8"))
   }
   if (language != "de") {
-    df <- vroom(dfcontent, delim = ",")
+    df <- vroom(file = dfcontent, 
+                delim = ",",
+                locale = locale(grouping_mark = ".", decimal_mark = ",", encoding = "UTF-8"))
   }
-
+  
   n <- df %>%
     select(-ends_with("Code"), -ends_with("Label"), -Zeit) %>%
     names()
-  return(df %>% mutate_at(n, as.double))
+
+  return(df %>% mutate_at(n, ~as.numeric(
+    parse_number(., 
+                 locale = locale(decimal_mark = ","))
+  )))
 }
