@@ -5,20 +5,9 @@ library(readxl)
 # Datensatz ----
 
 Fragen <- read_excel("Fragen_Quiz.xlsx")
+df <- read_csv2("daten_quiz.csv")
 
-df <- tibble(
-  Statistik_Code = c(12411, 12411, 12411, 13312, 13312, 13312),
-  Zeit = c(2021, 2021, 2021, 2021, 2021, 2021),
-  AGS_Code = c(14730, 14625, 14666, 14730, 14625, 14666),
-  AGS_Label = c("Nordsachsen", "Vogtland", "Dresden", "Nordsachsen", "Vogtland", "Dresden"),
-  Zwei_Code = c(NA, NA, NA, NA, NA, NA),
-  Wert = c(1, 2, 3, 4, 5, 6)
-)
-
-# TODO in utils.R verschieben
-# Funktionen -----
-
-source("utils.R")
+source("utils3.R")
 
 # UI ----
 ui <- fluidPage(
@@ -48,7 +37,7 @@ server <- function(input, output, session) {
   Ergebnis <- reactiveVal()
   Ergebnis(0)
   i <- reactiveVal(1)
-
+  
   # Aufbau Start-Bildschirm ----
   createStartScreenUI <- function() {
     tagList(
@@ -72,8 +61,8 @@ server <- function(input, output, session) {
         inputId = "anzahlfragen",
         label = "3. Wähle die Anzahl der Fragen:",
         min = 1,
-        max = 4, # nrow(nrowfragen()), # TODO nrow(unique(df$StatistiK_code))
-        value = 2 # floor(mean(c(nrowfragen(),1)))
+        max = 4, 
+        value = 2 
       ),
       actionButton(
         inputId = "starten",
@@ -102,19 +91,17 @@ server <- function(input, output, session) {
       
       output$Chart <- renderUI({
         #test
-         renderText(selectedfragen())
-        NULL
+        renderText(selectedfragen())
       })
     }
   })
-
   
-
+  
   observeEvent(
     input$starten,
     gestartet(TRUE)
   )
-
+  
   # Spielende ----
   
   # Function to create UI for the end of the game
@@ -137,7 +124,7 @@ server <- function(input, output, session) {
       })
       
       output$Chart <- renderUI({
-      #NULL
+        #NULL
       })
       
       output$Fragesidebar <- renderUI({})
@@ -146,17 +133,17 @@ server <- function(input, output, session) {
     }
   })
   
-
+  
   # Richtig-Falsch ----
   observeEvent(input$richtigbutton, {
     Ergebnis(Ergebnis() + 1)
     removeModal()
   })
-
+  
   observeEvent(input$falschbutton, {
     removeModal()
   })
-
+  
   # Plotauswertung ----
   tolistenbuttons <- reactive(list(input$richtigbutton, input$falschbutton))
   
@@ -171,16 +158,16 @@ server <- function(input, output, session) {
           inputId = "Jahr",
           label = "Jahr auswählen", 
           choices = df %>% 
-            filter(Statistik_Code == selectedfragen()[i()], is.na(Zwei_Code)) %>% 
-            select(Zeit) %>% 
+            filter(Statistik_Code == selectedfragen()[i()], Merkmal == "Insgesamt") %>% 
+            select(Jahr) %>% 
             unique() %>% 
             pull()
         ),
         output$p <- renderPlot({
           ggplot(
             df %>% 
-              filter(Statistik_Code == selectedfragen()[i()], Zeit == input$Jahr, is.na(Zwei_Code)),
-            aes(x = reorder(AGS_Label, desc(Wert)), y = Wert) 
+              filter(Statistik_Code == selectedfragen()[i()], Jahr == input$Jahr, Merkmal == "Insgesamt"),
+            aes(x = reorder(AGS_Label, desc(Anzahl)), y = Anzahl) 
           ) + 
             geom_col() + 
             theme_bw()+
@@ -206,23 +193,34 @@ server <- function(input, output, session) {
     }
   })
   
-
   observeEvent(input$naechsteFrage, {
     i(i() + 1)
     output$Chart <- renderUI({
       # Leeren
     })
   })
-
-  richtigeAntwort <- reactive(maxfinden(df, selectedfragen()[i()]))
+  
+  merkmalsauspraegung <- reactive({
+    Fragen %>% 
+      filter(Statistik_Code == selectedfragen()[i()]) %>% 
+      select(Merkmal) %>% 
+      pull()
+    })
+  
+  richtigeAntwort <- reactive({
+    req(merkmalsauspraegung())
+    maxfinden(df, selectedfragen()[i()], merkmalsauspraegung())
+    })
+  
   falscheAntwort <- reactive({
-    falscheAntwortenziehen(df, selectedfragen()[i()], richtigeAntwort())
+    req(merkmalsauspraegung())
+    falscheAntwortenziehen(df, selectedfragen()[i()], richtigeAntwort(), merkmalsauspraegung())
   })
-
+  
   auswahlfragen <- reactive({
     c(richtigeAntwort(), falscheAntwort()[1:2]) %>% sample()
   })
-
+  
   fragezeile <- reactive({
     req(selectedfragen())
     Fragen %>% filter(Statistik_Code == selectedfragen()[i()])
@@ -263,7 +261,7 @@ server <- function(input, output, session) {
     }
   })
   
-
+  
   # Auswahl auswerten ----
   # Function to evaluate the selected answer and show the appropriate modal
   evaluateAnswer <- function() {
