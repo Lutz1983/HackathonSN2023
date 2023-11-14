@@ -2,14 +2,19 @@
 # 
 
 mod_ui_quiz <- function(id) {
+  ns <- NS(id)
   tagList(
-    h1("Quiz")
+    uiOutput("quizcontrol")
   )
 }
 
-mod_server_quiz <- function(id) {
+mod_server_quiz <- function(id, start) {
   moduleServer(id, function(input, output, session) {
-    
+    observeEvent(input$start,
+    output$quizcontrol <- renderUI({
+      h1("gestartet...")
+    })
+    )
   })
 }
 
