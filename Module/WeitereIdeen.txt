@@ -1,0 +1,3 @@
+- animierter SliderInput für Karten (Durchlauf durch Jahre mit Loop)
+- shinytheme
+- 

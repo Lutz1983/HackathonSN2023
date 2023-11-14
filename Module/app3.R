@@ -14,16 +14,18 @@ ui <- fluidPage(
   titlePanel("REGIO-Quiz"),
   sidebarLayout(
     sidebarPanel(
+      width = 3,
       uiOutput("Punktzahl"),
       uiOutput("Fragesidebar")
     ),
     mainPanel(
+      width = 9,
       fluidRow(
-        p("-Quizbereich-"),
+        # p("-Quizbereich-"),
         uiOutput("Controls")
       ),
       fluidRow(
-        p("-Auswertung-"),
+        # p("-Auswertung-"),
         uiOutput("Chart")
       )
     )
@@ -37,7 +39,7 @@ server <- function(input, output, session) {
   Ergebnis <- reactiveVal()
   Ergebnis(0)
   i <- reactiveVal(1)
-  
+
   # Aufbau Start-Bildschirm ----
   createStartScreenUI <- function() {
     tagList(
@@ -61,8 +63,9 @@ server <- function(input, output, session) {
         inputId = "anzahlfragen",
         label = "3. Wähle die Anzahl der Fragen:",
         min = 1,
-        max = 4, 
-        value = 2 
+        max = 4,
+        value = 2,
+        step = 1
       ),
       actionButton(
         inputId = "starten",
@@ -71,39 +74,39 @@ server <- function(input, output, session) {
       )
     )
   }
-  
+
   selectedfragen <- reactive({
     req(input$thema)
     req(input$anzahlfragen)
     fragenziehen(Fragen, input$thema, input$anzahlfragen)
   })
-  
+
   # Refactored observe block
   observe({
     if (!gestartet()) {
       output$Controls <- renderUI({
         createStartScreenUI()
       })
-      
+
       output$Punktzahl <- renderUI({
         p("Wähle aus und beginne das Quiz!")
       })
-      
+
       output$Chart <- renderUI({
-        #test
+        # test
         renderText(selectedfragen())
       })
     }
   })
-  
-  
+
+
   observeEvent(
     input$starten,
     gestartet(TRUE)
   )
-  
+
   # Spielende ----
-  
+
   # Function to create UI for the end of the game
   createEndGameUI <- function() {
     tagList(
@@ -114,7 +117,7 @@ server <- function(input, output, session) {
       downloadButton(outputId = "downloadcertificate")
     )
   }
-  
+
   # Refactored observe block
   observe({
     req(input$anzahlfragen)
@@ -122,31 +125,31 @@ server <- function(input, output, session) {
       output$Controls <- renderUI({
         createEndGameUI()
       })
-      
+
       output$Chart <- renderUI({
-        #NULL
+        # NULL
       })
-      
+
       output$Fragesidebar <- renderUI({})
-      
+
       showNotification("Spiel beendet!")
     }
   })
-  
-  
+
+
   # Richtig-Falsch ----
   observeEvent(input$richtigbutton, {
     Ergebnis(Ergebnis() + 1)
     removeModal()
   })
-  
+
   observeEvent(input$falschbutton, {
     removeModal()
   })
-  
+
   # Plotauswertung ----
   tolistenbuttons <- reactive(list(input$richtigbutton, input$falschbutton))
-  
+
   # Function to create the chart UI
   createChartUI <- function() {
     tagList(
@@ -156,34 +159,52 @@ server <- function(input, output, session) {
       fluidRow(
         selectInput(
           inputId = "Jahr",
-          label = "Jahr auswählen", 
-          choices = df %>% 
-            filter(Statistik_Code == selectedfragen()[i()], Merkmal == "Insgesamt") %>% 
-            select(Jahr) %>% 
-            unique() %>% 
+          label = "Jahr auswählen",
+          choices = df %>%
+            filter(Statistik_Code == selectedfragen()[i()]) %>%
+            select(Jahr) %>%
+            unique() %>%
             pull()
         ),
-        output$p <- renderPlot({
-          ggplot(
-            df %>% 
-              filter(Statistik_Code == selectedfragen()[i()], Jahr == input$Jahr, Merkmal == "Insgesamt"),
-            aes(x = reorder(AGS_Label, desc(Anzahl)), y = Anzahl) 
-          ) + 
-            geom_col() + 
-            theme_bw()+
-            xlab("Kreise") +
-            ylab("Merkmal")
-        }, res = 96)
+        selectInput(
+          inputId = "Auspraegung",
+          label = "Merkmalsausprägung auswählen",
+          choices = df %>%
+            filter(Statistik_Code == selectedfragen()[i()]) %>%
+            select(Merkmal) %>%
+            unique() %>%
+            pull()
+        ),
+        output$p <- renderPlot(
+          {
+            ggplot(
+              df %>%
+                filter(Statistik_Code == selectedfragen()[i()], Jahr == input$Jahr, Merkmal == input$Auspraegung),
+              aes(x = reorder(AGS_Label, Anzahl), y = Anzahl)
+            ) +
+              geom_col() +
+              theme_bw() +
+              coord_flip() +
+              xlab("Kreise") +
+              ylab(input$Auspraegung)
+          },
+          res = 96
+        )
       ),
       fluidRow(
-        actionButton(
-          inputId = "naechsteFrage",
-          label = "Nächste Frage"
+        column(6,
+          offset = 6, align = "right",
+          actionButton(
+            inputId = "naechsteFrage",
+            label = "Nächste Frage",
+            icon = icon("arrow-right"),
+            class = "btn-info"
+          )
         )
       )
     )
   }
-  
+
   # Refactored observeEvent block
   observeEvent(tolistenbuttons(), {
     if (gestartet()) {
@@ -192,40 +213,40 @@ server <- function(input, output, session) {
       })
     }
   })
-  
+
   observeEvent(input$naechsteFrage, {
     i(i() + 1)
     output$Chart <- renderUI({
       # Leeren
     })
   })
-  
+
   merkmalsauspraegung <- reactive({
-    Fragen %>% 
-      filter(Statistik_Code == selectedfragen()[i()]) %>% 
-      select(Merkmal) %>% 
+    Fragen %>%
+      filter(Statistik_Code == selectedfragen()[i()]) %>%
+      select(Merkmal) %>%
       pull()
-    })
-  
+  })
+
   richtigeAntwort <- reactive({
     req(merkmalsauspraegung())
     maxfinden(df, selectedfragen()[i()], merkmalsauspraegung())
-    })
-  
+  })
+
   falscheAntwort <- reactive({
     req(merkmalsauspraegung())
     falscheAntwortenziehen(df, selectedfragen()[i()], richtigeAntwort(), merkmalsauspraegung())
   })
-  
+
   auswahlfragen <- reactive({
     c(richtigeAntwort(), falscheAntwort()[1:2]) %>% sample()
   })
-  
+
   fragezeile <- reactive({
     req(selectedfragen())
     Fragen %>% filter(Statistik_Code == selectedfragen()[i()])
   })
-  
+
   # Quiz-Controls ----
   # Function to create the quiz controls UI
   createQuizControlsUI <- function() {
@@ -240,43 +261,43 @@ server <- function(input, output, session) {
       br(),
       renderText(paste0("Antwort: ", req(input$A1), " wählen?")),
       br(),
-      actionButton("antworten", "Auswählen", class = "btn-lg btn-success")
+      actionButton("antworten", "Auswählen", class = "btn-lg btn-primary")
     )
   }
-  
+
   # Refactored observe block for quiz controls
   observe({
     if (gestartet()) {
       output$Controls <- renderUI({
         createQuizControlsUI()
       })
-      
+
       output$Punktzahl <- renderUI({
         renderText(paste0("Punktzahl: ", Ergebnis()))
       })
-      
+
       output$Fragesidebar <- renderUI({
         renderText(paste0("Frage ", i(), " von ", length(selectedfragen())))
       })
     }
   })
-  
-  
+
+
   # Auswahl auswerten ----
   # Function to evaluate the selected answer and show the appropriate modal
   evaluateAnswer <- function() {
+    req(input$A1)
     if (input$A1 == richtigeAntwort()) {
       showModal(richtig)
     } else {
       showModal(falsch)
     }
   }
-  
+
   # Refactored observeEvent block for answer evaluation
   observeEvent(input$antworten, {
     evaluateAnswer()
   })
-  
 }
 
 shinyApp(ui, server)
