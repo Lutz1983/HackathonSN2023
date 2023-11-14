@@ -8,51 +8,13 @@ library(readxl)
 Fragen <- read_excel("Fragen_Quiz.xlsx")
 
 df <- tibble(
-  Statistik_Code = c(11111, 11111, 11111, 22222),
-  Zeit = c(2021,2021, 2021,  2021),
-  AGS_Code = c(14730, 14625, 14666, 14730),
-  AGS_Label = c("Nordsachsen", "Vogtland", "Dresden", "Nordsachsen"),
-  Zwei_Code = c(NA, NA, NA, NA),
-  Wert = c(2,2.5, 3, 5)
+  Statistik_Code = c(11111, 11111, 11111, 31111, 31111, 31111),
+  Zeit = c(2021, 2021, 2021, 2021, 2021, 2021),
+  AGS_Code = c(14730, 14625, 14666, 14730, 14625, 14666),
+  AGS_Label = c("Nordsachsen", "Vogtland", "Dresden", "Nordsachsen", "Vogtland", "Dresden"),
+  Zwei_Code = c(NA, NA, NA, NA, NA, NA),
+  Wert = c(1, 2, 3, 4, 5, 6)
 )
-
-maxfinden <- function(df, Statistikcode, Jahr) {
-  df %>% 
-    filter(Statistik_Code == Statistikcode, Zeit == max(Jahr), is.na(Zwei_Code)) %>%
-    filter(Wert == max(Wert)) %>% 
-    select(AGS_Label) %>% 
-    pull() %>% 
-    return()
-}
-
-minfinden <- function(df, Statistikcode, Jahr) {
-  df %>% 
-    filter(Statistik_Code == Statistikcode, Zeit == max(Jahr), is.na(Zwei_Code)) %>%
-    filter(Wert == min(Wert)) %>% 
-    select(AGS_Label) %>% 
-    pull() %>% 
-    return()
-}
-
-falscheAntwortenziehen <- function(df, Statistikcode, Jahr, richtigeAntwort) {
-  df %>% 
-    filter(Statistik_Code == Statistikcode, 
-           Zeit == max(Jahr), 
-           is.na(Zwei_Code),
-           AGS_Label != richtigeAntwort) %>% 
-    select(AGS_Label) %>% 
-    pull()
-}
-
-fragenziehen  <- function(df, themen, anzahl) {
-  df %>% 
-    filter(Thema %in% themen) %>% 
-    select(Statistik_Code) %>% 
-    pull() %>% 
-    sample(anzahl, replace = FALSE) %>% 
-    return()
-}
-
 
 
 dfalt <- tibble(
@@ -77,6 +39,47 @@ dfalt <- tibble(
 ziehen <- function(df) {
   sample(seq(nrow(df)), nrow(df), replace = FALSE)
 }
+
+maxfinden <- function(df, Statistikcode) {
+  df %>%
+    filter(Statistik_Code == Statistikcode, Zeit == max(Zeit), is.na(Zwei_Code)) %>%
+    filter(Wert == max(Wert)) %>%
+    select(AGS_Label) %>%
+    pull() %>%
+    return()
+}
+
+minfinden <- function(df, Statistikcode) {
+  df %>%
+    filter(Statistik_Code == Statistikcode, Zeit == max(Zeit), is.na(Zwei_Code)) %>%
+    filter(Wert == min(Wert)) %>%
+    select(AGS_Label) %>%
+    pull() %>%
+    return()
+}
+
+falscheAntwortenziehen <- function(df, Statistikcode, richtigeAntwort) {
+  df %>%
+    filter(
+      Statistik_Code == Statistikcode,
+      Zeit == max(Zeit),
+      is.na(Zwei_Code),
+      AGS_Label != richtigeAntwort
+    ) %>%
+    select(AGS_Label) %>%
+    pull()
+}
+
+fragenziehen <- function(df, themen, anzahl) {
+  df %>%
+    filter(Thema %in% themen) %>%
+    select(Statistik_Code) %>%
+    pull() %>%
+    sample(anzahl, replace = FALSE) %>%
+    return()
+}
+
+
 
 richtig <- modalDialog(
   title = "Korrekt",
@@ -126,7 +129,7 @@ server <- function(input, output, session) {
 
 
 
-# Aufbau Start-Bildschirm ----
+  # Aufbau Start-Bildschirm ----
   observe({
     if (gestartet() == FALSE) {
       output$Controls <- renderUI({
@@ -151,8 +154,8 @@ server <- function(input, output, session) {
             inputId = "anzahlfragen",
             label = "3. Wähle die Anzahl der Fragen:",
             min = 1,
-            max = 4, # TODO nrow(unique(df$StatistiK_code))
-            value = floor(mean(c(4,1)))
+            max = 4, # nrow(nrowfragen()), # TODO nrow(unique(df$StatistiK_code))
+            value = 2 # floor(mean(c(nrowfragen(),1)))
           ),
           actionButton(
             inputId = "starten",
@@ -165,57 +168,73 @@ server <- function(input, output, session) {
       output$Punktzahl <- renderUI({
         p("Wähle aus und beginne das Quiz!")
       })
-      
+
       output$Chart <- renderUI({
         # Kein Inhalt
-        #test
+        # test
         renderText(selectedfragen())
       })
     }
   })
-  
+
+  # nrowfragen <- reactiveVal()
+  #
+  # observe({
+  #   if (isTruthy(input$thema)) {}
+  #   else {nrowfragen(4)}
+  # })
+  #
+  # nrowfragen <- reactiveVal({
+  #   req(input$thema)
+  #   Fragen %>%
+  #     filter(Thema %in% input$thema) %>%
+  #     select(Statistik_Code) %>%
+  #     unique() %>%
+  #     nrow()
+  # })
+
   selectedfragen <- reactive({
     req(input$thema)
     req(input$anzahlfragen)
     fragenziehen(Fragen, input$thema, input$anzahlfragen)
   })
 
-      
+
   observeEvent(
     input$starten,
     gestartet(TRUE)
   )
 
-# Spielende ----  
+  # Spielende ----
   observe({
-    if (i() == 5) { # hardcoded Anzahl Fragen
+    req(input$anzahlfragen)
+    if (i() == input$anzahlfragen + 1) { # hardcoded Anzahl Fragen
       output$Controls <- renderUI({
         tagList(
-        h1("Spiel beendet!"),
-        br(),
-        p("Hier kannst du dein Ergebnis als Zertifikat herunterladen..."),
-        br(),
-        downloadButton(outputId = "downloadcertificate")
+          h1("Spiel beendet!"),
+          br(),
+          p("Hier kannst du dein Ergebnis als Zertifikat herunterladen..."),
+          br(),
+          downloadButton(outputId = "downloadcertificate")
         )
       })
       output$Chart <- renderUI({
         # leer
       })
       showNotification("Spiel beendet!")
-      
+
       # output$downloadcertificate <- downloadHandler(
       #   filename = paste0("certificate", Sys.Date(), ".pdf"),
       #   content = ,
       # )
-      
     }
   })
-  
-  
+
+
   # Plotauswertung ----
   observeEvent(input$richtigbutton, {
     Ergebnis(Ergebnis() + 1)
-    
+
 
     output$Chart <- renderUI({
       # TODO passenden Chart anzeigen
@@ -234,30 +253,54 @@ server <- function(input, output, session) {
   })
 
   observeEvent(input$falschbutton, {
+    output$Chart <- renderUI({
+      # TODO passenden Chart anzeigen
+      tagList(
+        fluidRow(p("Chart xx")),
+        fluidRow(
+          actionButton(
+            inputId = "naechsteFrage",
+            label = "Nächste Frage"
+          )
+        )
+      )
+    })
     removeModal()
   })
-  
-  observeEvent(input$naechsteFrage,{
+
+  observeEvent(input$naechsteFrage, {
     i(i() + 1)
     output$Chart <- renderUI({
-      #Leeren
+      # Leeren
     })
   })
-  
+
+
+  richtigeAntwort <- reactive(maxfinden(df, selectedfragen()[i()]))
+  falscheAntwort <- reactive({
+    falscheAntwortenziehen(df, selectedfragen()[i()], richtigeAntwort())
+  })
+
+  auswahlfragen <- reactive({
+    c(richtigeAntwort(), falscheAntwort()[1:2]) %>% sample()
+  })
 
   # Quiz-Controls ----
   observe({
     if (gestartet() == TRUE) {
+      fragezeile <- reactive({
+        Fragen %>% filter(Statistik_Code == selectedfragen()[i()])
+      })
+
+
+
       output$Controls <- renderUI({
         tagList(
-          h1(df[zufall()[i()], ] %>% select(Frage) %>% pull()),
+          h1(fragezeile() %>% select(Frage) %>% pull()),
           radioButtons(
             inputId = "A1",
             label = "Wähle die richtig Antwort:",
-            choices = df[zufall()[i()], ] %>%
-              select(Antwort1, Antwort2, Antwort3) %>%
-              pivot_longer(starts_with("Antwort"), values_to = "Antworten") %>%
-              select("Antworten") %>% pull(),
+            choices = auswahlfragen(),
             selected = character(0)
           ),
           br(),
@@ -274,18 +317,9 @@ server <- function(input, output, session) {
     }
   })
 
-  #Auswahl auswerten ----
+  # Auswahl auswerten ----
   observeEvent(input$antworten, {
-    if (
-      df[zufall()[i()], ] %>% select(starts_with("Istrichtig") &
-        ends_with(
-          df[zufall()[i()], ] %>%
-            select(Antwort1, Antwort2, Antwort3) %>%
-            pivot_longer(starts_with("Antwort"), values_to = "Antworten") %>%
-            filter(Antworten == req(input$A1)) %>%
-            select(name) %>%
-            pull() %>% str_sub(-1)
-        )) %>% pull()) {
+    if (input$A1 == richtigeAntwort()) {
       showModal(richtig)
     } else {
       showModal(falsch)
