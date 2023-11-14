@@ -128,7 +128,6 @@ server <- function(input, output, session) {
   i <- reactiveVal(1)
 
 
-
   # Aufbau Start-Bildschirm ----
   observe({
     if (gestartet() == FALSE) {
@@ -177,28 +176,11 @@ server <- function(input, output, session) {
     }
   })
 
-  # nrowfragen <- reactiveVal()
-  #
-  # observe({
-  #   if (isTruthy(input$thema)) {}
-  #   else {nrowfragen(4)}
-  # })
-  #
-  # nrowfragen <- reactiveVal({
-  #   req(input$thema)
-  #   Fragen %>%
-  #     filter(Thema %in% input$thema) %>%
-  #     select(Statistik_Code) %>%
-  #     unique() %>%
-  #     nrow()
-  # })
-
   selectedfragen <- reactive({
     req(input$thema)
     req(input$anzahlfragen)
     fragenziehen(Fragen, input$thema, input$anzahlfragen)
   })
-
 
   observeEvent(
     input$starten,
@@ -230,33 +212,27 @@ server <- function(input, output, session) {
     }
   })
 
+  
 
-  # Plotauswertung ----
+  # Richtig-Falsch ----
   observeEvent(input$richtigbutton, {
     Ergebnis(Ergebnis() + 1)
-
-
-    output$Chart <- renderUI({
-      # TODO passenden Chart anzeigen
-      tagList(
-        fluidRow(p("Chart xx")),
-        fluidRow(
-          actionButton(
-            inputId = "naechsteFrage",
-            label = "Nächste Frage"
-          )
-        )
-      )
-    })
-
     removeModal()
   })
 
   observeEvent(input$falschbutton, {
+    removeModal()
+  })
+
+  # Plotauswertung ----
+  tolistenbuttons <- reactive(list(input$richtigbutton, input$falschbutton))
+  
+  observeEvent(tolistenbuttons(), {
+    if (gestartet() == TRUE) {
     output$Chart <- renderUI({
       # TODO passenden Chart anzeigen
       tagList(
-        fluidRow(p("Chart xx")),
+        fluidRow(p(fragezeile() %>% select(Info) %>% pull())),
         fluidRow(
           actionButton(
             inputId = "naechsteFrage",
@@ -265,7 +241,7 @@ server <- function(input, output, session) {
         )
       )
     })
-    removeModal()
+    }
   })
 
   observeEvent(input$naechsteFrage, {
@@ -274,7 +250,6 @@ server <- function(input, output, session) {
       # Leeren
     })
   })
-
 
   richtigeAntwort <- reactive(maxfinden(df, selectedfragen()[i()]))
   falscheAntwort <- reactive({
@@ -285,15 +260,15 @@ server <- function(input, output, session) {
     c(richtigeAntwort(), falscheAntwort()[1:2]) %>% sample()
   })
 
+  fragezeile <- reactive({
+    req(selectedfragen())
+    Fragen %>% filter(Statistik_Code == selectedfragen()[i()])
+  })
+  
   # Quiz-Controls ----
   observe({
     if (gestartet() == TRUE) {
-      fragezeile <- reactive({
-        Fragen %>% filter(Statistik_Code == selectedfragen()[i()])
-      })
-
-
-
+      
       output$Controls <- renderUI({
         tagList(
           h1(fragezeile() %>% select(Frage) %>% pull()),
@@ -309,7 +284,6 @@ server <- function(input, output, session) {
           actionButton("antworten", "Auswählen", class = "btn-lg btn-success")
         )
       })
-
 
       output$Punktzahl <- renderUI({
         renderText(paste0("Punktzahl: ", Ergebnis()))
