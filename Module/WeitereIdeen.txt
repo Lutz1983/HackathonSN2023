@@ -1,3 +1,7 @@
-- animierter SliderInput für Karten (Durchlauf durch Jahre mit Loop)
+- animierter SliderInput für Karten / Plots (Durchlauf durch Jahre mit Loop)
 - shinytheme
+- Zertifikat
+- Kartenwidget
+weitere Ausbaustufen: 
+- Worin ist meine gewählte Region überdurchschnittlich gut? -> Plot Region + Top 3 und Lower 3
 - 
