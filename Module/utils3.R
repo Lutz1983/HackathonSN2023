@@ -37,8 +37,7 @@ fragenziehen <- function(df, themen, anzahl) {
     filter(Thema %in% themen) %>%
     select(Statistik_Code) %>%
     pull() %>%
-    sample(anzahl, replace = FALSE) %>%
-    return()
+    sample(anzahl, replace = FALSE) 
 }
 
 richtig <- modalDialog(
