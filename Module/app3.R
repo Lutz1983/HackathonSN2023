@@ -21,11 +21,9 @@ ui <- fluidPage(
     mainPanel(
       width = 9,
       fluidRow(
-        # p("-Quizbereich-"),
         uiOutput("Controls")
       ),
       fluidRow(
-        # p("-Auswertung-"),
         uiOutput("Chart")
       )
     )
@@ -121,7 +119,7 @@ server <- function(input, output, session) {
   # Refactored observe block
   observe({
     req(input$anzahlfragen)
-    if (i() == input$anzahlfragen + 1) { # hardcoded Anzahl Fragen
+    if (i() == input$anzahlfragen + 1) {
       output$Controls <- renderUI({
         createEndGameUI()
       })
