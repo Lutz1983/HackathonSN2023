@@ -1,5 +1,5 @@
 library(shiny)
-#library(shinythemes)
+library(plotly)
 library(tidyverse)
 library(readxl)
 
@@ -196,7 +196,7 @@ server <- function(input, output, session) {
         ),
         selectInput(
           inputId = "Auspraegung",
-          label = "Merkmalsausprägung auswählen",
+          label = "Merkmalsausprägung auswählen:",
           choices = df %>%
             filter(id == selectedfragen()[i()]) %>%
             select(Merkmal) %>%
@@ -238,17 +238,69 @@ server <- function(input, output, session) {
       )
     )
   }
+  
+  
+  # Function to create the line chart UI
+  createLineChartUI <- function() {
+    tagList(
+      fluidRow(
+        h2("Auswertung"),
+        tags$i(fragezeile() %>% select(Info) %>% pull()) # Info zur Statistik
+      ),
+      fluidRow(
+        selectInput(
+          inputId = "Auspraegung",
+          label = "Merkmalsausprägung auswählen:",
+          choices = df %>%
+            filter(id == selectedfragen()[i()]) %>%
+            select(Merkmal) %>%
+            unique() %>%
+            pull(),
+          selected = Fragen %>%
+            filter(id == selectedfragen()[i()]) %>%
+            select(Merkmal) %>%
+            pull()
+        ),
+        output$p <- renderPlotly(
+          {
+            ggplotly(ggplot(
+              df %>%
+                filter(id == selectedfragen()[i()],
+                       Merkmal == input$Auspraegung,
+                       AGS_Label %in% auswahlfragen())) +
+              geom_line(aes(x = Jahr, 
+                            y = Wert,
+                            colour = AGS_Label)) +
+              theme_minimal() +
+              xlab("Jahr") +
+              ylab(input$Auspraegung))
+          }
+        )
+      ),
+      fluidRow(
+        column(6,
+               offset = 6, align = "right",
+               nextButton
+        )
+      )
+    )
+  }
+  
+  
+  
+  
+  
 
   # Refactored observeEvent block
   observeEvent(tolistenbuttons(), {
     req(gestartet())
     req(fragezeile())
-    if (gestartet() & fragezeile() %>% select(Grafik) %>% pull() != "dddasdsad") {
+    if (gestartet() & fragezeile() %>% select(Grafik) %>% pull() == "Balkendiagramm") {
       output$Chart <- renderUI({
         createBarChartUI()
       })
     } else {
-      output$Chart <- renderUI({nextButton})
+      output$Chart <- renderUI({createLineChartUI()})
     }
   })
 
@@ -258,7 +310,18 @@ server <- function(input, output, session) {
       # Leeren
     })
   })
-
+  
+  # Zur Auswertung update
+  observeEvent(tolistenbuttons(), {
+    req(gestartet())
+    if (i() == input$anzahlfragen) {
+      updateActionButton(session = session, 
+                         inputId = "naechsteFrage", 
+                         label = "Zur Auswertung!", 
+                         icon = icon("arrow-right"))
+    }
+  })
+  
   #Quizfragen auswählen
   merkmalsauspraegung <- reactive({
     Fragen %>%
