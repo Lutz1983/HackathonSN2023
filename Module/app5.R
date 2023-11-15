@@ -10,7 +10,7 @@ df$Wert <- as.numeric(df$Wert)
 Fragen <- Fragen %>% mutate(id = paste0(Statistik_Code, Wert_Code))
 df <- df %>% mutate(id = paste0(Statistik_Code, Wert_Code))
 
-source("utils4.R")
+source("utils5.R")
 
 # UI ----
 ui <- fluidPage(
