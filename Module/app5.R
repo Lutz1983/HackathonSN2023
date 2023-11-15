@@ -1,4 +1,5 @@
 library(shiny)
+library(shinyjs)
 library(tidyverse)
 library(readxl)
 
@@ -19,7 +20,8 @@ ui <- fluidPage(
     sidebarPanel(
       width = 3,
       uiOutput("Punktzahl"),
-      uiOutput("Fragesidebar")
+      uiOutput("Fragesidebar"),
+      uiOutput("Neustart")
     ),
     mainPanel(
       width = 9,
@@ -76,7 +78,8 @@ server <- function(input, output, session) {
     )
   }
 
-  
+  # selectedfragen <- reactive({"12411BEVSTD__Bevoelkerungsstand__Anzahl"})
+      
   selectedfragen <- reactive({
     req(input$thema)
     req(input$anzahlfragen)
@@ -93,15 +96,19 @@ server <- function(input, output, session) {
       output$Punktzahl <- renderUI({
         p("Wähle aus und beginne das Quiz!")
       })
-
+      
       output$Chart <- renderUI({})
+      output$Fragesidebar <- renderUI({})
+      output$Neustart <- renderUI({})
     }
   })
 
 
   observeEvent(
-    input$starten,
+    input$starten, {
+      req(input$thema)
     gestartet(TRUE)
+      }
   )
 
   # Spielende ----
@@ -140,19 +147,17 @@ server <- function(input, output, session) {
   observeEvent(input$richtigbutton, {
     Ergebnis(Ergebnis() + 1)
     removeModal()
-    
   })
 
   observeEvent(input$falschbutton, {
     removeModal()
-    
   })
 
   # Plotauswertung ----
   tolistenbuttons <- reactive(list(input$richtigbutton, input$falschbutton))
 
   # Function to create the chart UI
-  createChartUI <- function() {
+  createBarChartUI <- function() {
     tagList(
       fluidRow(
         tags$i(fragezeile() %>% select(Info) %>% pull()) # Info zur Statistik
@@ -197,12 +202,7 @@ server <- function(input, output, session) {
       fluidRow(
         column(6,
           offset = 6, align = "right",
-          actionButton(
-            inputId = "naechsteFrage",
-            label = "Nächste Frage",
-            icon = icon("arrow-right"),
-            class = "btn-info"
-          )
+          nextButton
         )
       )
     )
@@ -210,9 +210,11 @@ server <- function(input, output, session) {
 
   # Refactored observeEvent block
   observeEvent(tolistenbuttons(), {
-    if (gestartet()) {
+    req(gestartet())
+    req(fragezeile())
+    if (gestartet() & fragezeile() %>% select(Grafik) %>% pull() == "Balkendiagramm") {
       output$Chart <- renderUI({
-        createChartUI()
+        createBarChartUI()
       })
     }
   })
@@ -234,7 +236,17 @@ server <- function(input, output, session) {
 
   richtigeAntwort <- reactive({
     req(merkmalsauspraegung())
-    maxfinden(df, selectedfragen()[i()], merkmalsauspraegung())
+    req(selectedfragen())
+    req(i())
+    req(fragezeile())
+    
+    if (fragezeile() %>% 
+        select("Antwort_min_max") %>% 
+        pull() == "max") {
+      maxfinden(df, selectedfragen()[i()], merkmalsauspraegung())
+    } else{
+      minfinden(df, selectedfragen()[i()], merkmalsauspraegung())
+    }
   })
 
   falscheAntwort <- reactive({
@@ -283,9 +295,19 @@ server <- function(input, output, session) {
       output$Fragesidebar <- renderUI({
         renderText(paste0("Frage ", i(), " von ", length(selectedfragen())))
       })
+      
+      output$Neustart <- renderUI({
+        actionButton(inputId = "neustart", label = "Quiz neustarten")
+      })
+      
     }
   })
 
+    observeEvent(input$neustart,{
+      gestartet(FALSE)
+      Ergebnis(0)
+      i(1)
+      })
 
   # Auswahl auswerten ----
   # Function to evaluate the selected answer and show the appropriate modal

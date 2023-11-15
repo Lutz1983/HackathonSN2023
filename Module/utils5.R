@@ -43,3 +43,10 @@ richtig <- modalDialog(
   "Deine Antwort ist richtig!",
   footer = actionButton("richtigbutton", "Ok", class = "btn btn-success")
 )
+
+nextButton <- actionButton(
+  inputId = "naechsteFrage",
+  label = "Nächste Frage",
+  icon = icon("arrow-right"),
+  class = "btn-info"
+)
