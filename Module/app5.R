@@ -1,7 +1,8 @@
 library(shiny)
-library(shinyjs)
+#library(shinythemes)
 library(tidyverse)
 library(readxl)
+
 
 # Datensatz ----
 
@@ -51,13 +52,13 @@ server <- function(input, output, session) {
       selectInput(
         inputId = "bundesland",
         label = "1. Wähle dein Bundesland aus!",
-        choices = c("Sachsen", "Bayern"),
+        choices = c("Sachsen"),
         selected = character(0)
       ),
       br(),
       selectInput(
         inputId = "thema",
-        label = "2. Wähle dein Thema",
+        label = "2. Wähle dein Thema:",
         choices = c(unique(Fragen$Thema)),
         selected = character(0),
         multiple = TRUE
@@ -70,6 +71,14 @@ server <- function(input, output, session) {
         value = 2,
         step = 1
       ),
+      sliderInput(
+        inputId = "anzahlauswahl",
+        label = "4. Wähle die Anzahl der Auswahlmöglichkeiten:",
+        min = 3,
+        max = 6,
+        value = 4,
+        step = 1
+      ),
       actionButton(
         inputId = "starten",
         label = "Quiz starten!",
@@ -78,8 +87,9 @@ server <- function(input, output, session) {
     )
   }
 
-  # selectedfragen <- reactive({"12411BEVSTD__Bevoelkerungsstand__Anzahl"})
-      
+   # selectedfragen <- reactive({"12411BEVSTD__Bevoelkerungsstand__Anzahl"})
+   # selectedfragen <- reactive({"12411BEV519__Durchschnittsalter_der_Bevoelkerung__Jahre..."})
+   
   selectedfragen <- reactive({
     req(input$thema)
     req(input$anzahlfragen)
@@ -160,6 +170,7 @@ server <- function(input, output, session) {
   createBarChartUI <- function() {
     tagList(
       fluidRow(
+        h2("Auswertung"),
         tags$i(fragezeile() %>% select(Info) %>% pull()) # Info zur Statistik
       ),
       fluidRow(
@@ -188,9 +199,14 @@ server <- function(input, output, session) {
                 filter(id == selectedfragen()[i()], 
                        Jahr == input$Jahr, 
                        Merkmal == input$Auspraegung),
-              aes(x = reorder(AGS_Label, Wert), y = Wert)
+              aes(x = reorder(AGS_Label, Wert), 
+                  y = Wert,
+                  fill = ifelse(AGS_Label == richtigeAntwort(), "high", "low"))
             ) +
               geom_col() +
+              scale_fill_manual("legend",
+                                values = c("high" = "#63acbe", "Normal" = "#d3d3d3"))+
+              guides(fill = FALSE)+
               theme_bw() +
               coord_flip() +
               xlab("Kreise") +
@@ -212,10 +228,12 @@ server <- function(input, output, session) {
   observeEvent(tolistenbuttons(), {
     req(gestartet())
     req(fragezeile())
-    if (gestartet() & fragezeile() %>% select(Grafik) %>% pull() == "Balkendiagramm") {
+    if (gestartet() & fragezeile() %>% select(Grafik) %>% pull() != "dddasdsad") {
       output$Chart <- renderUI({
         createBarChartUI()
       })
+    } else {
+      output$Chart <- renderUI({nextButton})
     }
   })
 
@@ -255,7 +273,8 @@ server <- function(input, output, session) {
   })
 
   auswahlfragen <- reactive({
-    c(richtigeAntwort(), unique(falscheAntwort())[1:2]) %>% sample(replace = FALSE)
+    req(input$anzahlauswahl)
+    c(richtigeAntwort(), unique(falscheAntwort())[1:(input$anzahlauswahl-1)]) %>% sample(replace = FALSE)
   })
 
   fragezeile <- reactive({
