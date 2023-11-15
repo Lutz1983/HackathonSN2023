@@ -31,40 +31,52 @@ shinyUI <- fluidPage(
       column(
         tags$div("Minimale Größe"),
         leafletOutput('uiMapMin', width=320, height=250),
-        width = 3
-      ),
-      fluidRow(
-        column(
-          actionButton(
-            inputId = 'higlight_uiMapMin',
-            label = 'Highlight ein/aus',
-            style = 'background-color: lightblue;',
-            placeholder = 'bitte Kreisschlüssel eingeben'
-          ),width = 11
+        fluidRow(
+          column(
+            actionButton(
+              inputId = 'higlight_uiMapMin',
+              label = 'Highlight ein/aus',
+              style = 'background-color: lightblue;',
+              placeholder = 'bitte Kreisschlüssel eingeben'
+            ),width = 11
+          ),
+          column(
+            textInput(
+              inputId = 'higlight_uiMapMin',
+              label = '',
+              placeholder = 'bitte Kreisschlüssel eingeben'
+            ),width = 12
+          )
         ),
-        column(
-          textInput(
-            inputId = 'higlight_uiMapMin',
-            label = '',
-            placeholder = 'bitte Kreisschlüssel eingeben'
-          ),width = 12
-        )
+        width = 7
+      ),
+      column(
+        tags$div("Minimale Größe (Kreise Deutschland)"),
+        leafletOutput('uiMapMinDEKreise', width=250, height=250),
+        width = 3
       )
-    ),
-    column(
-      tags$div("Mittlere Größe"),
-      leafletOutput('uiMapMedium', width=640, height=500),
-      width = 3
+      ,
+      column(
+        tags$div("Minimale Größe (Länder Deutschland)"),
+        leafletOutput('uiMapMinDELaender', width=250, height=250),
+        width = 3
+      )
     ),
     fluidRow(
       column(
-        tags$div("Minimale Größe (Deutschland)"),
-        leafletOutput('uiMapMinDeutschland', width=250, height=250),
-        width = 3
+        tags$div("Mittlere Größe"),
+        leafletOutput('uiMapMedium', width=640, height=500),
+        width = 7
       ),
       column(
-        tags$div("Mittlere Größe (Deutschland)"),
-        leafletOutput('uiMapMediumDeutschland', width=640, height=400),
+        tags$div("Mittlere Größe (Kreise Deutschland)"),
+        leafletOutput('uiMapMediumDEKreise', width=400, height=500),
+        width = 3
+      )
+      ,
+      column(
+        tags$div("Mittlere Größe (Länder Deutschland)"),
+        leafletOutput('uiMapMediumDELaender', width=400, height=500),
         width = 3
       )
     )
@@ -86,12 +98,14 @@ shinyServer<-function(input, output, session) {
   # reactive values
   rv <- reactiveValues(
     mapSN = NULL,
-    mapDE = NULL,
+    mapDEKreise = NULL,
+    mapDELaender = NULL,
     uiMapMin = NULL,
     leafletProxy = NULL
   )  
   rv$mapSN <- basiskarte()
-  rv$mapDE <- basiskarteDE()
+  rv$mapDEKreise <- basiskarteDEKreise()
+  rv$mapDELaender <- basiskarteDELaender()
   reactive
   ({
     output$Controls <- renderUI
@@ -99,13 +113,19 @@ shinyServer<-function(input, output, session) {
       tmpVar <- renderLeaflet(rv$mapSN)
       output$uiMapMin <- tmpVar
       output$uiMapMedium <- tmpVar
-      tmpVarDE <- renderLeaflet(rv$mapDE)
+      #tmpVarDEKreise <- renderLeaflet(rv$mapDEKreise)
+      tmpVarDELaender <- renderLeaflet(rv$mapDELaender)
       
       ##hier muss wahrscheinlich der LeafletProxy ran
       ## siehe https://stackoverflow.com/questions/32897064/zoom-leaflet-map-to-default-in-rshiny
       #setView(map=tmpVarDE,lng = 11, lat = 51.37907, zoom = 5)
-      output$uiMapMinDeutschland <- tmpVarDE
-      output$uiMapMediumDeutschland <- tmpVarDE
+      #output$uiMapMinDEKreise <- tmpVarDEKreise
+      #output$uiMapMediumDEKreise <- tmpVarDEKreise
+      
+      output$uiMapMinDELaender <- tmpVarDELaender
+      output$uiMapMediumDELaender <- tmpVarDELaender
+      
+      
     })
   })
 }
