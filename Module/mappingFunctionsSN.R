@@ -14,7 +14,7 @@ addKreise <- function(map, data){
   map %>% #addGeoJSON(geojson)
   addGeoJSON(
     map = map, 
-    geojson = geojson
+    geojson = geojson,
     layerId = 'kreise',
     group = NULL,
     stroke = TRUE,
@@ -42,7 +42,7 @@ mapping <- function() {
  
  #min-width:320px; min-height: 230px;
  map <- leaflet(options = leafletOptions(
- #  zoomControl = FALSE,
+#   zoomControl = FALSE,
 #   boxZoom = FALSE,
 #   doubleClickZoom = FALSE,
 #   dragging = FALSE,
@@ -61,9 +61,9 @@ mapping <- function() {
    setView(lng = 13.75747, lat = 51.07907, zoom = 1) %>%
    addWMSTiles(
      wms_webatlas,
-     layers = c(#"Siedlung",
-                #"Vegetation",
-                #"Gewaesser",
+     layers = c("Siedlung",
+                "Vegetation",
+                "Gewaesser",
                 "Verkehr", 
                 #"Administrative_Einheiten",
                 "Beschriftung"
