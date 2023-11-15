@@ -20,8 +20,8 @@ if ("jsonlite" %in% rownames(installed.packages()) == FALSE) (install.packages("
 
 
 # source functions
-source('./functions/mappingFunctionsSN.R');
-source('./functions/manageGeoJsonLayers..R')
+source('./mappingFunctionsSN.R');
+source('./manageGeoJsonLayers..R')
 
 
 shinyUI <- fluidPage(
