@@ -76,8 +76,8 @@ basiskarte <- function() {
  geojson$style = list(
    stroke = TRUE,
    color = "#A3F",
-   weight = 5,
-   opacity = 0.5,
+   weight = 1,
+   opacity = 1.0,
    fill = TRUE,
    fillColor = "#A3F",
    fillOpacity = 0.2
