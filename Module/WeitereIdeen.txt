@@ -1,7 +1,12 @@
 - animierter SliderInput für Karten / Plots (Durchlauf durch Jahre mit Loop)
-- shinytheme
-- Zertifikat
+- Entryseite
 - Kartenwidget
+- shinytheme
+- Zertifikat zum Download
 weitere Ausbaustufen: 
 - Worin ist meine gewählte Region überdurchschnittlich gut? -> Plot Region + Top 3 und Lower 3
-- 
+- Quizerweiterung (generische Fragen) durch Fachbereiche
+- Quizerweiterung "Quiz des Monats"
+- Antwort-Statistik (Trefferquote) über alle durchgeführten Quiz im Monat x
+- Ausbau der Quizcharts
+
