@@ -1,29 +1,27 @@
 # utils.R ----
 
-maxfinden <- function(df, Statistikcode, merkmalsauspraegung) {
+maxfinden <- function(df, ident, merkmalsauspraegung) {
   df %>%
-    filter(Statistik_Code == Statistikcode, Merkmal == merkmalsauspraegung) %>%
+    filter(id == ident, Merkmal == merkmalsauspraegung) %>%
     filter(Jahr == max(Jahr)) %>% 
     filter(Wert == max(Wert)) %>%
     select(AGS_Label) %>%
-    pull() %>%
-    return()
+    pull() 
 }
 
-minfinden <- function(df, Statistikcode, merkmalsauspraegung) {
+minfinden <- function(df, ident, merkmalsauspraegung) {
   df %>%
-    filter(Statistik_Code == Statistikcode, Jahr == max(Jahr), Merkmal == merkmalsauspraegung) %>%
+    filter(id == ident, Merkmal == merkmalsauspraegung) %>%
     filter(Jahr == max(Jahr)) %>% 
     filter(Wert == min(Wert)) %>%
     select(AGS_Label) %>%
-    pull() %>%
-    return()
+    pull() 
 }
 
-falscheAntwortenziehen <- function(df, Statistikcode, richtigeAntwort, merkmalsauspraegung) {
+falscheAntwortenziehen <- function(df, ident, richtigeAntwort, merkmalsauspraegung) {
   df %>%
     filter(
-      Statistik_Code == Statistikcode,
+      id == ident,
       Merkmal == merkmalsauspraegung,
       AGS_Label != richtigeAntwort
     ) %>% 
@@ -35,7 +33,7 @@ falscheAntwortenziehen <- function(df, Statistikcode, richtigeAntwort, merkmalsa
 fragenziehen <- function(df, themen, anzahl) {
   df %>%
     filter(Thema %in% themen) %>%
-    select(Statistik_Code) %>%
+    select(id) %>%
     pull() %>%
     sample(anzahl, replace = FALSE) 
 }

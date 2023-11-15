@@ -7,6 +7,8 @@ library(readxl)
 Fragen <- read_excel("Fragen_Quiz.xlsx")
 df <- read_csv2("daten_quiz.csv")
 df$Wert <- as.numeric(df$Wert)
+Fragen <- Fragen %>% mutate(id = paste0(Statistik_Code, Wert_Code))
+df <- df %>% mutate(id = paste0(Statistik_Code, Wert_Code))
 
 source("utils4.R")
 
@@ -60,7 +62,7 @@ server <- function(input, output, session) {
       ),
       sliderInput(
         inputId = "anzahlfragen",
-        label = "3. Wähle die Wert der Fragen:",
+        label = "3. Wähle die Anzahl der Fragen:",
         min = 1,
         max = 4,
         value = 2,
@@ -140,12 +142,12 @@ server <- function(input, output, session) {
   observeEvent(input$richtigbutton, {
     Ergebnis(Ergebnis() + 1)
     removeModal()
-    
+    disable("antworten")
   })
 
   observeEvent(input$falschbutton, {
     removeModal()
-    
+    disable("antworten")
   })
 
   # Plotauswertung ----
@@ -162,11 +164,7 @@ server <- function(input, output, session) {
           inputId = "Jahr",
           label = "Jahr auswählen",
           choices = df %>%
-            filter(Statistik_Code == selectedfragen()[i()],
-                   Wert_Code == Fragen %>% 
-                     filter(Statistik_Code == selectedfragen()[i()]) %>% 
-                     select(Wert_Code) %>% 
-                     pull()) %>%
+            filter(id == selectedfragen()[i()]) %>% 
             select(Jahr) %>%
             unique() %>%
             pull()
@@ -175,11 +173,7 @@ server <- function(input, output, session) {
           inputId = "Auspraegung",
           label = "Merkmalsausprägung auswählen",
           choices = df %>%
-            filter(Statistik_Code == selectedfragen()[i()],
-                   Wert_Code == Fragen %>% 
-                     filter(Statistik_Code == selectedfragen()[i()]) %>% 
-                     select(Wert_Code) %>% 
-                     pull()) %>%
+            filter(id == selectedfragen()[i()]) %>%
             select(Merkmal) %>%
             unique() %>%
             pull()
@@ -188,13 +182,9 @@ server <- function(input, output, session) {
           {
             ggplot(
               df %>%
-                filter(Statistik_Code == selectedfragen()[i()], 
+                filter(id == selectedfragen()[i()], 
                        Jahr == input$Jahr, 
-                       Merkmal == input$Auspraegung,
-                       Wert_Code == Fragen %>% 
-                         filter(Statistik_Code == selectedfragen()[i()]) %>% 
-                         select(Wert_Code) %>% 
-                         pull()),
+                       Merkmal == input$Auspraegung),
               aes(x = reorder(AGS_Label, Wert), y = Wert)
             ) +
               geom_col() +
@@ -238,7 +228,7 @@ server <- function(input, output, session) {
 
   merkmalsauspraegung <- reactive({
     Fragen %>%
-      filter(Statistik_Code == selectedfragen()[i()]) %>%
+      filter(id == selectedfragen()[i()]) %>%
       select(Merkmal) %>%
       pull()
   })
@@ -259,7 +249,7 @@ server <- function(input, output, session) {
 
   fragezeile <- reactive({
     req(selectedfragen())
-    Fragen %>% filter(Statistik_Code == selectedfragen()[i()])
+    Fragen %>% filter(id == selectedfragen()[i()])
   })
 
   # Quiz-Controls ----
