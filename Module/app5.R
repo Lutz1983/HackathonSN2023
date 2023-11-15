@@ -11,6 +11,7 @@ df <- read_csv2("daten_quiz.csv")
 df$Wert <- as.numeric(df$Wert)
 Fragen <- Fragen %>% mutate(id = paste0(Statistik_Code, Wert_Code))
 df <- df %>% mutate(id = paste0(Statistik_Code, Wert_Code))
+df <- df %>% mutate(BL = str_sub(as.character(AGS), 1,2))
 
 source("utils5.R")
 
@@ -51,7 +52,7 @@ server <- function(input, output, session) {
       br(),
       selectInput(
         inputId = "bundesland",
-        label = "1. Wähle dein Bundesland aus!",
+        label = "1. Wähle deine Map!",
         choices = c("Sachsen"),
         selected = character(0)
       ),
@@ -71,13 +72,10 @@ server <- function(input, output, session) {
         value = 2,
         step = 1
       ),
-      sliderInput(
+      radioButtons(
         inputId = "anzahlauswahl",
-        label = "4. Wähle die Anzahl der Auswahlmöglichkeiten:",
-        min = 3,
-        max = 6,
-        value = 4,
-        step = 1
+        label = "4. Wähle den Schwierigkeitsgrad:",
+        choices = c("Daten-Entdecker", "Analytischer Abenteurer", "Statistik-Superstar")
       ),
       actionButton(
         inputId = "starten",
@@ -124,13 +122,14 @@ server <- function(input, output, session) {
   # Spielende ----
 
   # Function to create UI for the end of the game
-  createEndGameUI <- function() {
+  createEndGameUI <- function(rangtext) {
     tagList(
-      h1("Spiel beendet!"),
+      h1("Herzlichen Glückwunsch!"),
       br(),
-      p("Hier kannst du dein Ergebnis als Zertifikat herunterladen..."),
-      br(),
-      downloadButton(outputId = "downloadcertificate")
+      tags$h3(rangtext),
+      # p("Hier kannst du dein Ergebnis als Zertifikat herunterladen..."),
+      # br(),
+      # downloadButton(outputId = "downloadcertificate")
     )
   }
 
@@ -139,7 +138,15 @@ server <- function(input, output, session) {
     req(input$anzahlfragen)
     if (i() == input$anzahlfragen + 1) {
       output$Controls <- renderUI({
-        createEndGameUI()
+        if (Ergebnis() / (i()-1) >=.75) {
+        rangtext <- "Sehr stark! Du bist ein Statistik-Visionär!"
+        } else if (Ergebnis() / (i()-1) <=.25) {
+          rangtext <- "Alles klar! Du bist Daten-Entdecker!"
+        } else {
+          rangtext <- "Sehr gut! Du bist ein Analytischer Stratege!"
+          }
+        
+        createEndGameUI(rangtext)
       })
 
       output$Chart <- renderUI({
@@ -181,7 +188,11 @@ server <- function(input, output, session) {
             filter(id == selectedfragen()[i()]) %>% 
             select(Jahr) %>%
             unique() %>%
-            pull()
+            pull(),
+          selected = df %>%
+            filter(id == selectedfragen()[i()]) %>% 
+            select(Jahr) %>%
+            max() 
         ),
         selectInput(
           inputId = "Auspraegung",
@@ -190,6 +201,10 @@ server <- function(input, output, session) {
             filter(id == selectedfragen()[i()]) %>%
             select(Merkmal) %>%
             unique() %>%
+            pull(),
+          selected = Fragen %>%
+            filter(id == selectedfragen()[i()]) %>%
+            select(Merkmal) %>%
             pull()
         ),
         output$p <- renderPlot(
@@ -201,13 +216,13 @@ server <- function(input, output, session) {
                        Merkmal == input$Auspraegung),
               aes(x = reorder(AGS_Label, Wert), 
                   y = Wert,
-                  fill = ifelse(AGS_Label == richtigeAntwort(), "high", "low"))
+                  fill = ifelse(AGS_Label == richtigeAntwort(), "high", "Normal"))
             ) +
               geom_col() +
               scale_fill_manual("legend",
                                 values = c("high" = "#63acbe", "Normal" = "#d3d3d3"))+
               guides(fill = FALSE)+
-              theme_bw() +
+              theme_minimal() +
               coord_flip() +
               xlab("Kreise") +
               ylab(input$Auspraegung)
@@ -274,7 +289,13 @@ server <- function(input, output, session) {
 
   auswahlfragen <- reactive({
     req(input$anzahlauswahl)
-    c(richtigeAntwort(), unique(falscheAntwort())[1:(input$anzahlauswahl-1)]) %>% sample(replace = FALSE)
+    anz <- reactiveVal()
+    if (input$anzahlauswahl == "Daten-Entdecker") {
+      anz(2)
+    } else if (input$anzahlauswahl == "Analytischer Abenteurer") {
+      anz(3)
+    } else {anz(5)}
+    c(richtigeAntwort(), unique(falscheAntwort())[1:anz()]) %>% sample(replace = FALSE)
   })
 
   fragezeile <- reactive({
