@@ -6,8 +6,9 @@ library(readxl)
 
 Fragen <- read_excel("Fragen_Quiz.xlsx")
 df <- read_csv2("daten_quiz.csv")
+df$Wert <- as.numeric(df$Wert)
 
-source("utils3.R")
+source("utils4.R")
 
 # UI ----
 ui <- fluidPage(
@@ -161,7 +162,11 @@ server <- function(input, output, session) {
           inputId = "Jahr",
           label = "Jahr auswählen",
           choices = df %>%
-            filter(Statistik_Code == selectedfragen()[i()]) %>%
+            filter(Statistik_Code == selectedfragen()[i()],
+                   Wert_Code == Fragen %>% 
+                     filter(Statistik_Code == selectedfragen()[i()]) %>% 
+                     select(Wert_Code) %>% 
+                     pull()) %>%
             select(Jahr) %>%
             unique() %>%
             pull()
@@ -170,7 +175,11 @@ server <- function(input, output, session) {
           inputId = "Auspraegung",
           label = "Merkmalsausprägung auswählen",
           choices = df %>%
-            filter(Statistik_Code == selectedfragen()[i()]) %>%
+            filter(Statistik_Code == selectedfragen()[i()],
+                   Wert_Code == Fragen %>% 
+                     filter(Statistik_Code == selectedfragen()[i()]) %>% 
+                     select(Wert_Code) %>% 
+                     pull()) %>%
             select(Merkmal) %>%
             unique() %>%
             pull()
