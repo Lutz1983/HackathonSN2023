@@ -11,6 +11,7 @@ if ("tidyr" %in% rownames(installed.packages()) == FALSE) (install.packages("tid
 if ("stringr" %in% rownames(installed.packages()) == FALSE) (install.packages("stringr")); library("stringr");
 if ("dplyr" %in% rownames(installed.packages()) == FALSE) (install.packages("dplyr")); library("dplyr");
 if ("sp" %in% rownames(installed.packages()) == FALSE) (install.packages("sp")); library("sp");
+if ("sf" %in% rownames(installed.packages()) == FALSE) (install.packages("sf")); library("sf");
 if ("geosphere" %in% rownames(installed.packages()) == FALSE) (install.packages("geosphere")); library("geosphere");
 if ("geojsonio" %in% rownames(installed.packages()) == FALSE) (install.packages("geojsonio")); library("geojsonio");
 if ("leaflet" %in% rownames(installed.packages()) == FALSE) (install.packages("leaflet")); library("leaflet");
@@ -21,12 +22,18 @@ if ("jsonlite" %in% rownames(installed.packages()) == FALSE) (install.packages("
 
 # source functions
 source('./mappingFunctionsSN.R');
-source('./manageGeoJsonLayers..R')
+source('./manageGeoJsonLayers.R')
 
 
 shinyUI <- fluidPage(
   mainPanel(
     tags$h3('Karte', style = 'color:#337ab7;'),
+    selectInput(
+      inputId = "bundesland",
+      label = "1. Wähle deine Map!",
+      choices = c("Baden-Württemberg", "Berlin", "Brandenburg", "Freie Hansestadt Bremen", "Freie und Hansestadt Hamburg", "Freistaat Bayern", "Freistaat Sachsen", "Hessen", "Mecklenburg-Vorpommern", "Niedersachsen", "Nordrhein-Westfalen", "Rheinland-Pfalz", "Saarland", "Sachsen-Anhalt", "Schleswig-Holstein", "Thüringen"),
+      selected = character(0)
+    ),
     fluidRow(
       column(
         tags$div("Minimale Größe"),
@@ -128,7 +135,6 @@ shinyServer<-function(input, output, session) {
       
     })
   })
-}
-
-# Run the application 
-shinyApp(ui = shinyUI, server = shinyServer)
+} 
+  # Run the application 
+  shinyApp(ui = shinyUI, server = shinyServer)
