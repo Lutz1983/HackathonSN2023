@@ -66,7 +66,7 @@ server <- function(input, output, session) {
       ),
       sliderInput(
         inputId = "anzahlfragen",
-        label = "3. Wähle die Anzahl der Fragen:",
+        label = "3. Wähle die Anzahl der Level:",
         min = 1,
         max = 5,
         value = 2,
@@ -74,7 +74,7 @@ server <- function(input, output, session) {
       ),
       radioButtons(
         inputId = "anzahlauswahl",
-        label = "4. Wähle den Schwierigkeitsgrad:",
+        label = "4. Wähle deinen Schwierigkeitsgrad:",
         choices = c("Daten-Entdecker", "Analytischer Abenteurer", "Statistik-Superstar")
       ),
       actionButton(
@@ -87,12 +87,17 @@ server <- function(input, output, session) {
 
    # selectedfragen <- reactive({"12411BEVSTD__Bevoelkerungsstand__Anzahl"})
    # selectedfragen <- reactive({"12411BEV519__Durchschnittsalter_der_Bevoelkerung__Jahre..."})
+  #selectedfragen <- reactive({"11111FLC006__Gebietsflaeche__qkm"})
+  selectedfragen <- reactive({c("61511BAU004__Durchschnittlicher_Kaufwert_je_qm__EUR",
+                                "31111BAU015__Wohngebaeude__Anzahl",
+                                "12411BEV519__Durchschnittsalter_der_Bevoelkerung__Jahre...")})
+  
    
-  selectedfragen <- reactive({
-    req(input$thema)
-    req(input$anzahlfragen)
-    fragenziehen(Fragen, input$thema, input$anzahlfragen)
-  })
+  # selectedfragen <- reactive({
+  #   req(input$thema)
+  #   req(input$anzahlfragen)
+  #   fragenziehen(Fragen, input$thema, input$anzahlfragen)
+  # })
 
   # Refactored observe block
   observe({
@@ -124,12 +129,9 @@ server <- function(input, output, session) {
   # Function to create UI for the end of the game
   createEndGameUI <- function(rangtext) {
     tagList(
-      h1("Herzlichen Glückwunsch!"),
+      h1("Super Leistung!"),
       br(),
-      tags$h3(rangtext),
-      # p("Hier kannst du dein Ergebnis als Zertifikat herunterladen..."),
-      # br(),
-      # downloadButton(outputId = "downloadcertificate")
+      tags$h3(rangtext)
     )
   }
 
@@ -141,7 +143,7 @@ server <- function(input, output, session) {
         if (Ergebnis() / (i()-1) >=.75) {
         rangtext <- "Sehr stark! Du bist ein Statistik-Visionär!"
         } else if (Ergebnis() / (i()-1) <=.25) {
-          rangtext <- "Alles klar! Du bist Daten-Entdecker!"
+          rangtext <- "Alles klar! Du bist Zahlen-Entdecker!"
         } else {
           rangtext <- "Sehr gut! Du bist ein Analytischer Stratege!"
           }
@@ -286,9 +288,64 @@ server <- function(input, output, session) {
     )
   }
   
-  
-  
-  
+  # Function to create the pie chart UI
+  createPieChartUI <- function() {
+    tagList(
+      fluidRow(
+        h2("Auswertung"),
+        tags$i(fragezeile() %>% select(Info) %>% pull()) # Info zur Statistik
+      ),
+      fluidRow(
+        selectInput(
+          inputId = "Jahr",
+          label = "Jahr auswählen",
+          choices = df %>%
+            filter(id == selectedfragen()[i()]) %>% 
+            select(Jahr) %>%
+            unique() %>%
+            pull()
+        ),
+        
+        output$p <- renderPlotly(
+          {
+            df_Wert <- reactive({
+              df %>%
+                filter(id == selectedfragen()[i()], 
+                       Jahr == input$Jahr) %>%
+                select(Wert) %>% 
+                deframe()
+            })
+            df_AGS_Label <- reactive({
+              df %>%
+                filter(id == selectedfragen()[i()], 
+                       Jahr == input$Jahr) %>%
+                select(AGS_Label) %>% 
+                deframe()
+            })
+            
+            plot_ly(
+              data = df %>%
+                filter(id == selectedfragen()[i()], 
+                       Jahr == input$Jahr),
+              labels = reorder(df_AGS_Label(), df_Wert()),
+              values = df_Wert(),
+              type = 'pie',
+              hole = 0.6,
+              showlegend = FALSE,
+              marker = list(colors = ifelse(df_AGS_Label() == richtigeAntwort(), "#63acbe", "#D3D3D3")),
+              textposition = 'inside'
+            ) 
+          }
+        )
+      ),
+      fluidRow(
+        column(6,
+               offset = 6, align = "right",
+               nextButton
+        )
+      )
+    )
+  }
   
 
   # Refactored observeEvent block
@@ -296,11 +353,11 @@ server <- function(input, output, session) {
     req(gestartet())
     req(fragezeile())
     if (gestartet() & fragezeile() %>% select(Grafik) %>% pull() == "Balkendiagramm") {
-      output$Chart <- renderUI({
-        createBarChartUI()
-      })
-    } else {
+      output$Chart <- renderUI({createBarChartUI()})
+    } else if (gestartet() & fragezeile() %>% select(Grafik) %>% pull() == "Liniendiagramm"){
       output$Chart <- renderUI({createLineChartUI()})
+    } else {
+      output$Chart <- renderUI({createPieChartUI()})
     }
   })
 
