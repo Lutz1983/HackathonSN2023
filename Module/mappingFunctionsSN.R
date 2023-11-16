@@ -171,7 +171,7 @@ erzeugeKarteLaender <- function () {
   hl_opts <- highlightOptions(
     color = "#CC0000", weight = 3, bringToFront = TRUE)
   map <- map %>%
-    addPolygons(data = geojson, layerId = ~id, group = "laender", highlightOptions = hl_opts, stroke = TRUE, color = "#A3F", weight = 1,   opacity = 1.0,     fill = TRUE, fillColor = "#A3F",  fillOpacity = 0.2)
+    addPolygons(data = geojson, layerId = ~id, label = ~htmlEscape(BEZ), group = "laender", highlightOptions = hl_opts, stroke = TRUE, color = "#A3F", weight = 1,   opacity = 1.0,     fill = TRUE, fillColor = "#A3F",  fillOpacity = 0.2)
   
   map
 }
@@ -191,6 +191,7 @@ manageHighlightLaenderClick <- function (input, rv, session){
       addPolygons(
         group = "selection",
         data = karte_filtered,
+        label = ~htmlEscape(BEZ),
         fillColor = "cyan",
         weight = 1.2,
         color = "#666666",
@@ -223,6 +224,7 @@ manageHighlightLaenderSelect <- function (input, rv){
       addPolygons(
         group = "selection",
         data = karte_filtered,
+        label = ~htmlEscape(BEZ),
         fillColor = "cyan",
         weight = 1.2,
         color = "#666666",
@@ -264,7 +266,7 @@ erzeugeKarteSN <- function () {
   hl_opts <- highlightOptions(
     color = "#CC0000", weight = 3, bringToFront = TRUE)
   map <- map %>%
-    addPolygons(data = geojsonSN, layerId = ~id, group = "laender", highlightOptions = hl_opts, stroke = TRUE, color = "#A3F", weight = 1,   opacity = 1.0,     fill = TRUE, fillColor = "#A3F",  fillOpacity = 0.2)
+    addPolygons(data = geojsonSN, layerId = ~id, label = ~htmlEscape(NAME), group = "kreiseSN", highlightOptions = hl_opts, stroke = TRUE, color = "#A3F", weight = 1,   opacity = 1.0,     fill = TRUE, fillColor = "#A3F",  fillOpacity = 0.2)
   
   map
 }
@@ -283,6 +285,7 @@ manageHighlightSNClick <- function (input, rv, session){
       clearGroup("selection") %>%
       addPolygons(
         group = "selection",
+        label = ~htmlEscape(NAME),
         data = karte_filtered,
         fillColor = "cyan",
         weight = 1.2,
@@ -316,6 +319,7 @@ manageHighlightSNSelect <- function (input, rv){
       addPolygons(
         group = "selection",
         data = karte_filtered,
+        label = ~htmlEscape(NAME),
         fillColor = "cyan",
         weight = 1.2,
         color = "#666666",

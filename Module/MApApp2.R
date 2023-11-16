@@ -18,6 +18,7 @@ if ("leaflet" %in% rownames(installed.packages()) == FALSE) (install.packages("l
 if ("leafem" %in% rownames(installed.packages()) == FALSE) (install.packages("leafem")); library("leafem");
 if ("geojsonR" %in% rownames(installed.packages()) == FALSE) (install.packages("geojsonR")); library("geojsonR");
 if ("jsonlite" %in% rownames(installed.packages()) == FALSE) (install.packages("jsonlite")); library("jsonlite");
+if ("htmltools" %in% rownames(installed.packages()) == FALSE) (install.packages("htmltools")); library("htmltools");
 
 
 # source functions
