@@ -124,17 +124,17 @@ server <- function(input, output, session) {
     )
   }
 
-  selectedfragen <- reactive({c("61511BAU004__Durchschnittlicher_Kaufwert_je_qm__EUR",
-                                "21111BIL013__Allgemeinbildende_Schulen__Anzahl",
-    "45412GAST04__Geoeffnete_Beherbergungsbetriebe__Anzahl",
-    "33111FLC005__Bodenflaeche__ha")})
+  # selectedfragen <- reactive({c("61511BAU004__Durchschnittlicher_Kaufwert_je_qm__EUR",
+  #                               "21111BIL013__Allgemeinbildende_Schulen__Anzahl",
+  #   "45412GAST04__Geoeffnete_Beherbergungsbetriebe__Anzahl",
+  #   "33111FLC005__Bodenflaeche__ha")})
   
   #randomisiert
-  # selectedfragen <- reactive({
-  #   req(input$thema)
-  #   req(input$anzahlfragen)
-  #   fragenziehen(Fragen, input$thema, input$anzahlfragen)
-  # })
+  selectedfragen <- reactive({
+    req(input$thema)
+    req(input$anzahlfragen)
+    fragenziehen(Fragen, input$thema, input$anzahlfragen)
+  })
 
   # Refactored observe block
   observe({
