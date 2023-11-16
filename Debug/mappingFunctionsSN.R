@@ -155,17 +155,18 @@ basiskarteDEKreise <- function() {
 # 
 #  map
 # }
-# Lade das GeoJSON-File
-geojson <- st_as_sf(geojsonio::geojson_read("./laender_deutschland.geojson", what = "sp"))
-# add rownumber
-geojson <- geojson %>% dplyr::mutate(id = row_number())
 erzeugeKarteLaender <- function () {
+  # Lade das GeoJSON-File
+  geojson <- st_as_sf(geojsonio::geojson_read("./laender_deutschland.geojson", what = "sp"))
+  # add rownumber
+  geojson <- geojson %>% dplyr::mutate(id = row_number())
   
+  map.daten <- geojson
   # Erstelle eine Leaflet-Karte
   map <- leaflet() %>%
+    addTiles() %>%
     setView(lng = 11, lat = 50.87907, zoom = 6) %>%
-    addTiles() %>%     fitBounds(5.7, 47.329238, 15.043435, 54.426628)
-  map.daten <- geojson
+    fitBounds(5.7, 47.329238, 15.043435, 54.426628)
   
   # Definiere Highlight-Eigenschaften und füge die Polygone hinzu
   hl_opts <- highlightOptions(
@@ -235,98 +236,6 @@ manageHighlightLaenderSelect <- function (input, rv){
       clearGroup("selection")
   }
 }
-
-# Lade das GeoJSON-File
-geojsonSN <- st_as_sf(geojsonio::geojson_read("./kreise_grob.geojson", what = "sp"))
-# add rownumber
-geojsonSN <- geojsonSN %>% dplyr::mutate(id = row_number()) %>% sf::st_transform(4326)
-erzeugeKarteSN <- function () {
-  
-  wms_webatlas <- "https://sgx.geodatenzentrum.de/wms_basemapde"
-  # Erstelle eine Leaflet-Karte
-  map <- leaflet() %>%
-    addTiles() %>%
-    # addWMSTiles(
-    #   wms_webatlas,
-    #   layers = c("Siedlung",
-    #              "Vegetation",
-    #              "Gewaesser",
-    #              "Verkehr", 
-    #              #"Administrative_Einheiten",
-    #              "Beschriftung"
-    #   ),
-    #   options = WMSTileOptions(format = "image/png", transparent = TRUE) %>%
-    #     setView(lng = 13.75747, lat = 51.07907, zoom = 1)) %>%
-    fitBounds(11.768364, 50.129238, 15.043435, 51.726628)
-  map.daten <- geojsonSN
-  
-  # Definiere Highlight-Eigenschaften und füge die Polygone hinzu
-  hl_opts <- highlightOptions(
-    color = "#CC0000", weight = 3, bringToFront = TRUE)
-  map <- map %>%
-    addPolygons(data = geojsonSN, layerId = ~id, group = "laender", highlightOptions = hl_opts, stroke = TRUE, color = "#A3F", weight = 1,   opacity = 1.0,     fill = TRUE, fillColor = "#A3F",  fillOpacity = 0.2)
-  
-  map
-}
-manageHighlightSNClick <- function (input, rv, session){
-  rv$selected_sn <- NULL
-  new_selected_sn <- req(input$MapSN_shape_click)
-  isolate(old_selected_sn <- rv$selected_sn)
-  if (is.null(old_selected_sn) || new_selected_sn$.nonce != old_selected_sn$.nonce) {
-    shiny::validate(
-      need(new_selected_sn$group!="selection", message=FALSE)
-    )
-    rv$selected_sn <- new_selected_sn
-    i <- which(geojsonSN$id==new_selected_sn$id)
-    karte_filtered <- geojsonSN[i,]
-    leafletProxy("Map") %>%
-      clearGroup("selection") %>%
-      addPolygons(
-        group = "selection",
-        data = karte_filtered,
-        fillColor = "cyan",
-        weight = 1.2,
-        color = "#666666",
-        opacity = 0.4,
-        fillOpacity = 0.8)
-    updateSelectInput(session, "sn", selected = karte_filtered$ID_LOCALID)
-  } else {
-    rv$selected <- NULL
-    leafletProxy("Map") %>%
-      clearGroup("selection")
-  }
-}
-manageHighlightSNSelect <- function (input, rv){
-  rv$selected_sn <- NULL
-  print(input$sn)
-  new_selected_sn <- filter(geojsonSN, ID_LOCALID ==req(input$sn))
-  #print(new_selected)
-  isolate(old_selected_sn <- rv$selected_sn)
-  if (is.null(old_selected_sn) || new_selected_sn$ID_LOCALID != old_selected_sn$ID_LOCALID) {
-    print("validate")
-    #    shiny::validate(
-    #      need(new_selected$group!="selection", message=FALSE)
-    #    )
-    rv$selected_sn <- new_selected_sn
-    i <- which(geojsonSN$id==new_selected_sn$id)
-    print(i)
-    karte_filtered <- new_selected_sn
-    leafletProxy("MapSN") %>%
-      clearGroup("selection") %>%
-      addPolygons(
-        group = "selection",
-        data = karte_filtered,
-        fillColor = "cyan",
-        weight = 1.2,
-        color = "#666666",
-        opacity = 0.4,
-        fillOpacity = 0.8)
-  } else {
-    print("else")
-    rv$selected_sn <- NULL
-    leafletProxy("MapSN") %>%
-      clearGroup("selection")
-  }
-}
-
+testkarte <- basiskarteDELaender()
+showMap(testkarte)
 

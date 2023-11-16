@@ -40,7 +40,22 @@ ui <- fluidPage(
     ),
     
     ##Kartenelement - kann an beliebige Stelle in der GUI
-    leafletOutput('Map', width=500, height=500)
+    leafletOutput('Map', width=500, height=500),
+    selectInput(
+      inputId = "sn",
+      label = "Kreisauswahl",
+      choices = c("Landkreis Bautzen" = "14625", "Kreisfreie Stadt Chemnitz" = "14511", 
+                  "Kreisfreie Stadt Dresden" = "14612", "Landkreis Erzgebirgskreis" = "14521", 
+                  "Landkreis Görlitz" = "14626", "Landkreis Leipzig" = "14729", 
+                  "Kreisfreie Stadt Leipzig" = "14713", "Landkreis Meißen" = "14627", 
+                  "Landkreis Mittelsachsen" = "14522", "Landkreis Nordsachsen" = "14730", 
+                  "Landkreis Sächsische Schweiz-Osterzgebirge" = "14628", 
+                  "Landkreis Vogtlandkreis" = "14523", "Landkreis Zwickau" = "14524"),
+      selected = character(0)
+    ),
+    
+    ##Kartenelement - kann an beliebige Stelle in der GUI
+    leafletOutput('MapSN', width=500, height=500)
   )
 )
 
@@ -48,7 +63,7 @@ server <- function(input, output, session) {
   ##Begin Server-Code für Karte
   ######## 
   observeEvent(input$bundesland, manageHighlightLaenderSelect (input, rv))
-
+  
   karte <- erzeugeKarteLaender()
   output$Map <- renderLeaflet({
     karte
@@ -60,6 +75,18 @@ server <- function(input, output, session) {
   observeEvent(input$Map_click, manageHighlightLaenderClick (input, rv, session))
   ##Ende 
   ########
+
+  
+  observeEvent(input$sn, manageHighlightSNSelect (input, rv))
+  karteSN <- erzeugeKarteSN()
+  output$MapSN <- renderLeaflet({
+    karteSN
+  })
+  output$click_on_shape <- renderPrint({
+    input$MapSN_shape_click
+  })
+  rv <- reactiveValues()
+  observeEvent(input$MapSN_click, manageHighlightSNClick (input, rv, session))
 }
 
 
