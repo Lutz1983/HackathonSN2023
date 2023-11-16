@@ -19,6 +19,7 @@ minfinden <- function(df, ident, merkmalsauspraegung) {
 }
 
 falscheAntwortenziehen <- function(df, ident, richtigeAntwort, merkmalsauspraegung) {
+  message(ident)
   df %>%
     filter(
       id == ident,
